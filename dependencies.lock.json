@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "verified_host": "macOS arm64",
+  "dependencies": [
+    {"name":"nlohmann/json","version":"3.12.0","source":"https://github.com/nlohmann/json","license":"MIT"},
+    {"name":"libplist","version":"2.7.0","source":"https://github.com/libimobiledevice/libplist","license":"LGPL-2.1-or-later"},
+    {"name":"OpenSSL","version":"3.6.2","source":"https://github.com/openssl/openssl","license":"Apache-2.0"},
+    {"name":"PCRE2","version":"10.47","source":"https://github.com/PCRE2Project/pcre2","license":"BSD-3-Clause WITH PCRE2-exception"}
+  ],
+  "note": "This records the exact locally validated versions; CMake permits documented compatible versions. System package managers resolve binaries. No dependency source is vendored."
+}

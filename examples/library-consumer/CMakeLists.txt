@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 3.24)
+project(SignetScanConsumer LANGUAGES CXX)
+find_package(SignetScan 1 CONFIG REQUIRED)
+add_executable(scan-consumer main.cpp)
+target_link_libraries(scan-consumer PRIVATE SignetScan::signet_scan)
