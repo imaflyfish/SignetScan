@@ -59,13 +59,13 @@ ClaimNode observations(const std::vector<Remark> &findings) {
   auto ordered = findings;
   std::stable_sort(ordered.begin(), ordered.end(),
                    [](const auto &first, const auto &second) {
-                     return first.impact != second.impact
-                                ? first.impact > second.impact
+                     return first.severity != second.severity
+                                ? first.severity > second.severity
                                 : first.code < second.code;
                    });
   for (const auto &finding : ordered)
     rows.push_back({{"code", finding.code},
-                    {"severity", severity_label(finding.impact)},
+                    {"severity", severity_label(finding.severity)},
                     {"message", finding.message},
                     {"explanation", finding.explanation},
                     {"evidence", finding.evidence}});
@@ -185,7 +185,7 @@ ClaimNode JsonWriter::render(const std::vector<AuditReport> &results) {
     summary["slices"] =
         summary["slices"].get<std::size_t>() + result.images.size();
     for (const auto &finding : result.observations()) {
-      auto level = severity_label(finding.impact);
+      auto level = severity_label(finding.severity);
       summary["by_severity"][level] =
           summary["by_severity"][level].get<std::size_t>() + 1;
       summary["by_code"][finding.code] =
@@ -256,9 +256,9 @@ std::string TextWriter::render(const std::vector<AuditReport> &results,
       }
     }
     for (const auto &finding : result.observations())
-      if (finding.impact >= minimum) {
-        output << "  " << severity_label(finding.impact) << " [" << finding.code
-               << "] " << finding.message << '\n';
+      if (finding.severity >= minimum) {
+        output << "  " << severity_label(finding.severity) << " ["
+               << finding.code << "] " << finding.message << '\n';
         if (verbose)
           output << "    " << finding.explanation << '\n';
       }

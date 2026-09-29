@@ -2,8 +2,8 @@
 #include <signet_scan/audit.hpp>
 
 namespace signet_scan {
-std::string severity_label(Severity impact) {
-  switch (impact) {
+std::string severity_label(Severity severity) {
+  switch (severity) {
   case Severity::high:
     return "high";
   case Severity::medium:

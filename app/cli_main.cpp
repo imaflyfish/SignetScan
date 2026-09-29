@@ -149,7 +149,7 @@ int main(int argc, char **argv) {
     if (options.failure)
       for (const auto &result : results)
         for (const auto &finding : result.observations())
-          if (finding.impact >= *options.failure)
+          if (finding.severity >= *options.failure)
             return 1;
     return 0;
   } catch (const std::exception &error) {

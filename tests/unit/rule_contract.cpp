@@ -35,7 +35,7 @@ std::optional<Severity> finding(const SliceOutcome &fixture,
                                 const std::string &code) {
   for (const auto &result : AuditRuleSet::evaluate(fixture))
     if (result.code == code)
-      return result.impact;
+      return result.severity;
   return std::nullopt;
 }
 } // namespace

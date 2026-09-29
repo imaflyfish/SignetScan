@@ -110,11 +110,11 @@ std::vector<std::uint8_t> load_input(const std::filesystem::path &path,
 std::string hex_encode(ByteView bytes);
 
 enum class Severity { info, low, medium, high };
-std::string severity_label(Severity impact);
+std::string severity_label(Severity severity);
 Severity parse_severity(const std::string &name);
 struct Remark {
   std::string code;
-  Severity impact = Severity::info;
+  Severity severity = Severity::info;
   std::string message, explanation;
   ClaimNode evidence = ClaimNode::object();
 };

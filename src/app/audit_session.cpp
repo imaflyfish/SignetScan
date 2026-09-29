@@ -20,8 +20,8 @@ std::vector<Remark> AuditReport::observations() const {
                      resources->observations.end());
   std::stable_sort(collected.begin(), collected.end(),
                    [](const auto &first, const auto &second) {
-                     return first.impact != second.impact
-                                ? first.impact > second.impact
+                     return first.severity != second.severity
+                                ? first.severity > second.severity
                                 : first.code < second.code;
                    });
   return collected;
