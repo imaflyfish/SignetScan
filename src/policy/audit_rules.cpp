@@ -92,22 +92,25 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
     return result;
   }
   const auto &signature = *facts.signing;
-  const auto &primary = signature.preferred();
-  bool adhoc = primary.attributes & 2;
+  // preferred() is the directory the report names in selected_directory_slot,
+  // not primary(), which is the slot-zero directory.
+  const auto &selected_directory = signature.preferred();
+  bool adhoc = selected_directory.attributes & 2;
   if (adhoc)
     add("adhoc-signature", Severity::medium, "Ad-hoc signing metadata",
         "The ad-hoc flag declares no certificate-backed identity. This "
         "inspection does not recompute code pages.",
-        {{"identifier", primary.identifier}});
+        {{"identifier", selected_directory.identifier}});
   else if (!signature.cms_bytes)
     add("no-cms-signature", Severity::medium, "CMS payload is absent",
         "The signature is not marked ad-hoc but has no nonempty CMS wrapper.");
-  if (primary.attributes & 0x20000)
+  if (selected_directory.attributes & 0x20000)
     add("linker-signed", Severity::info, "Linker signing flag declared",
         "This flag commonly appears on linker output before a separate signing "
         "step.");
-  if (!adhoc && signature.cms_bytes && primary.team_identifier.empty() &&
-      !primary.platform)
+  if (!adhoc && signature.cms_bytes &&
+      selected_directory.team_identifier.empty() &&
+      !selected_directory.platform)
     add("no-team-identifier", Severity::low, "Team identifier is absent",
         "The inspected CodeDirectory does not declare a development team.");
   std::set<unsigned> kinds;
@@ -128,16 +131,16 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
            {0x20, "cs-invalid-allowed", Severity::high,
             "Invalid-signature execution flag declared"},
            {8, "cs-installer", Severity::low, "Installer flag declared"}})
-    if (primary.attributes & flag)
+    if (selected_directory.attributes & flag)
       add(code, level, description,
           "This is a recorded CodeDirectory flag, not a measurement of "
           "permissions granted by the operating system.");
-  if (image.image_kind == 2 && !(primary.attributes & 0x10000)) {
-    if (primary.platform)
+  if (image.image_kind == 2 && !(selected_directory.attributes & 0x10000)) {
+    if (selected_directory.platform)
       add("platform-binary", Severity::info, "Platform identifier declared",
           "The hardened-runtime rule exempts slices that declare a platform "
           "identifier; the identifier is not authenticated here.",
-          {{"platform", primary.platform}});
+          {{"platform", selected_directory.platform}});
     else
       add("no-hardened-runtime", Severity::medium,
           "Hardened runtime is not declared",
@@ -156,7 +159,7 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
           {0x200, "can-exec-cdhash", Severity::high,
            "Code-hash execution permission requested"}};
   for (const auto &[flag, code, level, message] : execution)
-    if (primary.executable_flags & flag)
+    if (selected_directory.executable_flags & flag)
       add("execseg-" + code, level, message,
           "The executable-segment flags declare this capability; actual "
           "authorization is not inspected.");
@@ -245,17 +248,20 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
           {{"value", entry.value()}, {"source", facts.claims.source}});
   }
   auto signature_offset = image.signature_range->first;
-  if (primary.covered_bytes && primary.covered_bytes < signature_offset)
+  if (selected_directory.covered_bytes &&
+      selected_directory.covered_bytes < signature_offset)
     add("signature-gap", Severity::high,
         "Signature coverage metadata ends early",
         "The declared code limit precedes the signature region.",
-        {{"covered_bytes", primary.covered_bytes},
+        {{"covered_bytes", selected_directory.covered_bytes},
          {"signature_offset", signature_offset},
-         {"uncovered_bytes", signature_offset - primary.covered_bytes}});
-  if (primary.page_bytes && primary.covered_bytes) {
-    auto needed = primary.covered_bytes / primary.page_bytes +
-                  (primary.covered_bytes % primary.page_bytes != 0);
-    if (primary.code_slots < needed)
+         {"uncovered_bytes",
+          signature_offset - selected_directory.covered_bytes}});
+  if (selected_directory.page_bytes && selected_directory.covered_bytes) {
+    auto needed =
+        selected_directory.covered_bytes / selected_directory.page_bytes +
+        (selected_directory.covered_bytes % selected_directory.page_bytes != 0);
+    if (selected_directory.code_slots < needed)
       add("code-slot-shortfall", Severity::high, "Too few code-hash slots",
           "The declared slot count is insufficient for the declared coverage "
           "and page size.");
