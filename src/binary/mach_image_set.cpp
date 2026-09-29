@@ -106,6 +106,9 @@ MachSlice read_slice(ByteWindow input, std::uint64_t origin) {
       slice.signature_range = {{start, length}};
     } else if (opcode == 0x21 || opcode == 0x2c) {
       command.require(0, opcode == 0x2c ? 24 : 20);
+      if (!slice.encryption.is_null())
+        throw ParseFault("macho", "duplicate encryption load command",
+                         origin + header_bytes + position);
       input.require(value(8), value(12));
       slice.encryption = {{"offset", value(8)},
                           {"length", value(12)},
@@ -113,6 +116,9 @@ MachSlice read_slice(ByteWindow input, std::uint64_t origin) {
     } else if (opcode == 0x32) {
       command.require(0, 24);
       command.require(24, value(20) * 8);
+      if (!slice.build.is_null())
+        throw ParseFault("macho", "duplicate build load command",
+                         origin + header_bytes + position);
       slice.build = {{"platform", value(8)},
                      {"minimum_os", version_string(value(12))},
                      {"sdk", version_string(value(16))}};

@@ -26,6 +26,11 @@ mismatched digest widths, nonminimal DER lengths and integers, duplicate DER key
 invalid UTF-8, and trailing DER values. An empty encoded entitlement slot is
 invalid; an encoded empty dictionary is valid.
 
+A slice carries at most one signature, encryption and build load command. A
+second one is rejected rather than allowed to replace the first, because the
+report would otherwise describe one of two contradictory declarations without
+saying that the other existed.
+
 DER integer size and resource counts have explicit limits. These bound input
 processing, and they will reject constructs that an arbitrary-precision reader
 would accept.

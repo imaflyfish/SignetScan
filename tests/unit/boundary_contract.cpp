@@ -48,6 +48,17 @@ Buffer command(unsigned opcode, unsigned length) {
   number(input, 36, length, 4, false);
   return input;
 }
+Buffer command_twice(unsigned opcode, unsigned length) {
+  auto input = thin();
+  number(input, 16, 2, 4, false);
+  number(input, 20, 2 * length, 4, false);
+  input.resize(32 + 2 * length);
+  for (unsigned index = 0; index < 2; ++index) {
+    number(input, 32 + index * length, opcode, 4, false);
+    number(input, 36 + index * length, length, 4, false);
+  }
+  return input;
+}
 Buffer fat(bool wide, bool big) {
   unsigned table = wide ? 40 : 28;
   Buffer input(64);
@@ -181,6 +192,14 @@ int main(int argc, char **argv) {
   number(input, 52, 1, 4, false);
   rejects("build tool list exceeds command",
           [&] { MachImageSet::decode(input); });
+  input = command_twice(0x1d, 16);
+  rejects("duplicate signature load command",
+          [&] { MachImageSet::decode(input); });
+  input = command_twice(0x21, 20);
+  rejects("duplicate encryption load command",
+          [&] { MachImageSet::decode(input); });
+  input = command_twice(0x32, 24);
+  rejects("duplicate build load command", [&] { MachImageSet::decode(input); });
   auto cd = directory();
   auto sig = container({{0, cd}});
   for (std::size_t length = 0; length < sig.size(); ++length) {
