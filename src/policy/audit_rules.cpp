@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <set>
 #include <signet_scan/audit.hpp>
+#include <tuple>
 
 namespace signet_scan {
 void sort_remarks(std::vector<Remark> &findings) {
@@ -35,6 +36,11 @@ Severity parse_severity(const std::string &name) {
     return Severity::info;
   throw ParseFault("options", "unknown severity: " + name);
 }
+namespace {
+// A flag bit, the code it reports, its severity and its message. These tables
+// are policy, not state: build them once rather than per inspected slice.
+using FlagRule = std::tuple<unsigned, std::string, Severity, std::string>;
+} // namespace
 std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
   const auto &image = facts.image;
   std::vector<Remark> result;
@@ -127,13 +133,12 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
         "SHA-1 directory accompanies another algorithm",
         "Legacy compatibility metadata remains present; inspect the alternate "
         "algorithms.");
-  for (auto [flag, code, level, description] :
-       std::vector<std::tuple<unsigned, std::string, Severity, std::string>>{
-           {4, "cs-get-task-allow", Severity::high,
-            "Task-access flag declared"},
-           {0x20, "cs-invalid-allowed", Severity::high,
-            "Invalid-signature execution flag declared"},
-           {8, "cs-installer", Severity::low, "Installer flag declared"}})
+  static const std::vector<FlagRule> attributes = {
+      {4, "cs-get-task-allow", Severity::high, "Task-access flag declared"},
+      {0x20, "cs-invalid-allowed", Severity::high,
+       "Invalid-signature execution flag declared"},
+      {8, "cs-installer", Severity::low, "Installer flag declared"}};
+  for (const auto &[flag, code, level, description] : attributes)
     if (selected_directory.attributes & flag)
       add(code, level, description,
           "This is a recorded CodeDirectory flag, not a measurement of "
@@ -149,18 +154,17 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
           "Hardened runtime is not declared",
           "CS_RUNTIME is clear in the inspected CodeDirectory.");
   }
-  const std::vector<std::tuple<unsigned, std::string, Severity, std::string>>
-      execution = {
-          {0x10, "allow-unsigned", Severity::high,
-           "Unsigned execution permission requested"},
-          {0x20, "debugger", Severity::high, "Debugger permission requested"},
-          {0x40, "jit", Severity::medium, "JIT execution permission requested"},
-          {0x80, "skip-lv", Severity::high,
-           "Library-validation exception requested"},
-          {0x100, "can-load-cdhash", Severity::high,
-           "Code-hash loading permission requested"},
-          {0x200, "can-exec-cdhash", Severity::high,
-           "Code-hash execution permission requested"}};
+  static const std::vector<FlagRule> execution = {
+      {0x10, "allow-unsigned", Severity::high,
+       "Unsigned execution permission requested"},
+      {0x20, "debugger", Severity::high, "Debugger permission requested"},
+      {0x40, "jit", Severity::medium, "JIT execution permission requested"},
+      {0x80, "skip-lv", Severity::high,
+       "Library-validation exception requested"},
+      {0x100, "can-load-cdhash", Severity::high,
+       "Code-hash loading permission requested"},
+      {0x200, "can-exec-cdhash", Severity::high,
+       "Code-hash execution permission requested"}};
   for (const auto &[flag, code, level, message] : execution)
     if (selected_directory.executable_flags & flag)
       add("execseg-" + code, level, message,
@@ -218,17 +222,19 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
            {Severity::low, "Declares shared keychain groups"}},
           {"com.apple.security.app-sandbox",
            {Severity::info, "Requests App Sandbox confinement"}}};
-  const std::vector<std::tuple<std::string, Severity, std::string>> prefixes = {
-      {"com.apple.security.temporary-exception.", Severity::medium,
-       "Requests a sandbox exception"},
-      {"com.apple.security.cs.", Severity::medium,
-       "Declares a code-signing capability"},
-      {"com.apple.private.", Severity::low,
-       "Declares an Apple-private entitlement"},
-      {"com.apple.security.device.", Severity::info, "Requests device access"},
-      {"com.apple.security.files.", Severity::info, "Requests file access"},
-      {"com.apple.security.network.", Severity::info,
-       "Requests network access"}};
+  static const std::vector<std::tuple<std::string, Severity, std::string>>
+      prefixes = {
+          {"com.apple.security.temporary-exception.", Severity::medium,
+           "Requests a sandbox exception"},
+          {"com.apple.security.cs.", Severity::medium,
+           "Declares a code-signing capability"},
+          {"com.apple.private.", Severity::low,
+           "Declares an Apple-private entitlement"},
+          {"com.apple.security.device.", Severity::info,
+           "Requests device access"},
+          {"com.apple.security.files.", Severity::info, "Requests file access"},
+          {"com.apple.security.network.", Severity::info,
+           "Requests network access"}};
   for (auto entry = facts.claims.selected.begin();
        entry != facts.claims.selected.end(); ++entry) {
     if (entry.value().is_boolean() && !entry.value().get<bool>())
