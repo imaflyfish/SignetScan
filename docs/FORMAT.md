@@ -40,6 +40,16 @@ Diagnostics have `stage`, `message` and `offset`. Offsets refer to the relevant
 parser's enclosing view unless the stage reports a file-relative position; they
 are not suitable for blindly patching a binary.
 
+Read `offset` together with `stage`, because 0 is also how "no position" is
+spelled. The `macho`, `signature` and `der` stages read bytes and report where
+they stopped. The `input`, `bundle`, `resources`, `options` and `digest` stages
+describe a file or a request rather than a place inside one, and the `plist`
+stage decodes a node tree that has no byte positions; all of these report 0
+always. Within the byte stages a 0 is normally a real position — a refused
+container magic or an undersized document is genuinely at the start. The two
+`signature` diagnostics reporting a missing CodeDirectory are the exception:
+they are raised after parsing and have no position of their own.
+
 Resources include the bundle path and the executable path relative to that bundle.
 Resource `linkage` is `match`, `mismatch`, `absent`, `unrecorded` or `unreadable`.
 Each entry records its path, kind and comparison status. All understood recorded
