@@ -78,8 +78,10 @@ CodeDirectoryEntry directory(ByteWindow input, std::uint32_t slot) {
                        input.origin() + 36);
     record.algorithm = algorithm->second.first;
     record.digest = compute_digest(input.bytes(), record.algorithm);
+    // Code 3 is SHA-256 kept at the shorter declared width, so the stored
+    // digest keeps exactly the bytes the directory says it has.
     if (record.algorithm_code == 3)
-      record.digest.resize(40);
+      record.digest.resize(std::size_t(record.digest_width) * 2);
   } else
     record.algorithm = "unknown-" + std::to_string(record.algorithm_code);
   auto special_bytes =

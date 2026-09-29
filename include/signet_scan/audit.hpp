@@ -19,6 +19,10 @@ inline constexpr std::size_t max_document_bytes = 16 * 1024 * 1024;
 // open-ended walk of the filesystem, so every traversal shares it: a bundle's
 // resources, a bundle's executable folder and a recursive command-line scan.
 inline constexpr std::size_t max_traversed_entries = 250000;
+// A CDHash is the leading 20 bytes of a CodeDirectory digest, rendered as that
+// many hex characters. Both the JSON and the text report show it, so they take
+// the length from here rather than each truncating by hand.
+inline constexpr std::size_t cdhash_hex_length = 40;
 
 struct FaultNote {
   std::string stage;

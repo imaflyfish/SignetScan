@@ -8,6 +8,9 @@
 namespace signet_scan {
 namespace fs = std::filesystem;
 namespace {
+// Past this many resource discrepancies the report stops listing them one by
+// one and records the remaining count instead.
+constexpr std::size_t max_reported_problems = 40;
 bool beneath(const fs::path &root, const fs::path &candidate) {
   auto ancestor = root.begin(), descendant = candidate.begin();
   for (; ancestor != root.end(); ++ancestor, ++descendant)
@@ -264,7 +267,7 @@ void add_observations(SealVerdict &report) {
     if (status == "ok" || status == "optional-missing")
       continue;
     ++problems;
-    if (problems > 40)
+    if (problems > max_reported_problems)
       continue;
     auto path = check["path"].get<std::string>();
     if (status == "mismatch")
@@ -285,9 +288,10 @@ void add_observations(SealVerdict &report) {
       add("resource-hash-unsupported", Severity::medium,
           "Resource cannot be evaluated: " + path, check);
   }
-  if (problems > 40)
+  if (problems > max_reported_problems)
     add("resource-problems-remain", Severity::high,
-        "Additional resource discrepancies", {{"count", problems - 40}});
+        "Additional resource discrepancies",
+        {{"count", problems - max_reported_problems}});
   if (!report.unlisted.empty())
     add("resource-unsealed", Severity::medium,
         "Files required by seal rules are unlisted",

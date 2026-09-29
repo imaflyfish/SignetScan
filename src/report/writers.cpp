@@ -82,7 +82,7 @@ ClaimNode directory_json(const CodeDirectoryEntry &record) {
           {"algorithm", record.algorithm},
           {"digest_width", record.digest_width},
           {"digest", record.digest},
-          {"cdhash", record.digest.substr(0, 40)},
+          {"cdhash", record.digest.substr(0, cdhash_hex_length)},
           {"page_bytes", record.page_bytes},
           {"covered_bytes", record.covered_bytes},
           {"code_slots", record.code_slots},
@@ -245,7 +245,7 @@ std::string TextWriter::render(const std::vector<AuditReport> &results,
                << '\n';
         output << "    identifier: " << record.identifier
                << "\n    declared team: " << record.team_identifier
-               << "\n    CDHash: " << record.digest.substr(0, 40)
+               << "\n    CDHash: " << record.digest.substr(0, cdhash_hex_length)
                << "\n    declared entitlements (" << image.claims.source
                << "): " << image.claims.selected.dump() << '\n';
       }
