@@ -21,11 +21,22 @@ std::string version_string(std::uint64_t version) {
          std::to_string((version >> 8) & 255) + "." +
          std::to_string(version & 255);
 }
+// The four thin and four fat magics. recognises() answers for the scanner with
+// the same sets the readers route on, so a magic cannot be understood by one
+// and skipped by the other.
+bool thin_magic(std::uint64_t magic) {
+  return magic == 0xfeedface || magic == 0xfeedfacf || magic == 0xcefaedfe ||
+         magic == 0xcffaedfe;
+}
+bool fat_magic(std::uint64_t magic) {
+  return magic == 0xcafebabe || magic == 0xcafebabf || magic == 0xbebafeca ||
+         magic == 0xbfbafeca;
+}
 MachSlice read_slice(ByteWindow input, std::uint64_t origin) {
   auto magic = input.integer(0, 4);
   bool big = magic == 0xfeedface || magic == 0xfeedfacf;
   bool wide = magic == 0xfeedfacf || magic == 0xcffaedfe;
-  if (!big && magic != 0xcefaedfe && magic != 0xcffaedfe)
+  if (!thin_magic(magic))
     throw ParseFault("macho", "invalid Mach-O magic", origin);
   auto header_bytes = wide ? 32U : 28U;
   input.require(0, header_bytes);
@@ -139,17 +150,13 @@ bool MachImageSet::recognises(ByteView prefix) {
   if (prefix.size() < 4)
     return false;
   auto magic = ByteWindow(prefix).integer(0, 4);
-  return magic == 0xfeedface || magic == 0xfeedfacf || magic == 0xcefaedfe ||
-         magic == 0xcffaedfe || magic == 0xcafebabe || magic == 0xcafebabf ||
-         magic == 0xbebafeca || magic == 0xbfbafeca;
+  return thin_magic(magic) || fat_magic(magic);
 }
 std::vector<MachSlice> MachImageSet::decode(ByteView bytes) {
   ByteWindow input(bytes, "macho");
   auto magic = input.integer(0, 4);
   std::vector<MachSlice> images;
-  bool fat = magic == 0xcafebabe || magic == 0xcafebabf ||
-             magic == 0xbebafeca || magic == 0xbfbafeca;
-  if (!fat) {
+  if (!fat_magic(magic)) {
     images.push_back(read_slice(input, 0));
     return images;
   }
