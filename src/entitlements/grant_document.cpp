@@ -8,7 +8,10 @@
 
 namespace signet_scan {
 namespace {
-constexpr std::size_t maximum_nodes = 200000;
+// One nesting and node budget for both encodings: the two decoders report the
+// same limit, so they must enforce the same number.
+constexpr unsigned max_nesting_depth = 32;
+constexpr std::size_t max_nodes = 200000;
 bool valid_utf8(const std::string &text) {
   try {
     (void)ClaimNode(text).dump();
@@ -18,7 +21,7 @@ bool valid_utf8(const std::string &text) {
   }
 }
 ClaimNode convert_node(plist_t node, unsigned depth, std::size_t &remaining) {
-  if (depth > 32 || remaining == 0)
+  if (depth > max_nesting_depth || remaining == 0)
     throw ParseFault("plist", "document exceeds nesting or node limit");
   --remaining;
   switch (plist_get_node_type(node)) {
@@ -135,7 +138,7 @@ DerItem element(ByteWindow input, std::uint64_t offset) {
 }
 ClaimNode decode_value(const DerItem &item, unsigned depth,
                        std::size_t &remaining) {
-  if (depth > 32 || remaining == 0)
+  if (depth > max_nesting_depth || remaining == 0)
     throw ParseFault("der", "document exceeds nesting or node limit");
   --remaining;
   auto bytes = item.body.bytes();
@@ -219,7 +222,7 @@ ClaimNode parse_plist(ByteView bytes) {
   if (status != PLIST_ERR_SUCCESS || !raw ||
       (format != PLIST_FORMAT_XML && format != PLIST_FORMAT_BINARY))
     throw ParseFault("plist", "invalid XML or binary plist");
-  std::size_t remaining = maximum_nodes;
+  std::size_t remaining = max_nodes;
   auto result = convert_node(raw, 0, remaining);
   if (!result.is_object())
     throw ParseFault("plist", "expected dictionary at root");
@@ -238,7 +241,7 @@ ClaimNode parse_der(ByteView bytes) {
   auto dictionary = element(root.body, version.next);
   if (dictionary.tag != 0xb0 || dictionary.next != root.body.size())
     throw ParseFault("der", "invalid dictionary wrapper or trailing bytes");
-  std::size_t remaining = maximum_nodes;
+  std::size_t remaining = max_nodes;
   return decode_value(dictionary, 0, remaining);
 }
 GrantDocument GrantDocument::decode(const SignatureBlob &signature) {
