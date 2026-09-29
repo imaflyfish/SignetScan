@@ -138,21 +138,22 @@ DerItem element(ByteWindow input, std::uint64_t offset) {
 }
 ClaimNode decode_value(const DerItem &item, unsigned depth,
                        std::size_t &remaining) {
+  const auto at = item.body.origin();
   if (depth > max_nesting_depth || remaining == 0)
-    throw ParseFault("der", "document exceeds nesting or node limit");
+    throw ParseFault("der", "document exceeds nesting or node limit", at);
   --remaining;
   auto bytes = item.body.bytes();
   if (item.tag == 1) {
     if (bytes.size() != 1 || (bytes[0] != 0 && bytes[0] != 255))
-      throw ParseFault("der", "invalid DER boolean");
+      throw ParseFault("der", "invalid DER boolean", at);
     return bytes[0] != 0;
   }
   if (item.tag == 2) {
     if (bytes.empty() || bytes.size() > 8)
-      throw ParseFault("der", "integer outside signed 64-bit range");
+      throw ParseFault("der", "integer outside signed 64-bit range", at);
     if (bytes.size() > 1 && ((bytes[0] == 0 && !(bytes[1] & 128)) ||
                              (bytes[0] == 255 && (bytes[1] & 128))))
-      throw ParseFault("der", "nonminimal DER integer");
+      throw ParseFault("der", "nonminimal DER integer", at);
     std::uint64_t raw =
         item.body.integer(0, static_cast<unsigned>(bytes.size()));
     if (bytes[0] & 128) {
@@ -165,7 +166,7 @@ ClaimNode decode_value(const DerItem &item, unsigned depth,
   if (item.tag == 12) {
     std::string value(bytes.begin(), bytes.end());
     if (!valid_utf8(value))
-      throw ParseFault("der", "invalid UTF-8");
+      throw ParseFault("der", "invalid UTF-8", at);
     return value;
   }
   if (item.tag == 0x30 || item.tag == 0x31) {
@@ -184,23 +185,27 @@ ClaimNode decode_value(const DerItem &item, unsigned depth,
     while (offset < bytes.size()) {
       auto pair = element(item.body, offset);
       if (pair.tag != 0x30)
-        throw ParseFault("der", "dictionary entry must be a sequence");
+        throw ParseFault("der", "dictionary entry must be a sequence",
+                         pair.body.origin());
       auto key = element(pair.body, 0);
       if (key.tag != 12)
-        throw ParseFault("der", "dictionary key must be UTF-8");
+        throw ParseFault("der", "dictionary key must be UTF-8",
+                         key.body.origin());
       auto key_value =
           decode_value(key, depth + 1, remaining).get<std::string>();
       if (values.contains(key_value))
-        throw ParseFault("der", "duplicate dictionary key");
+        throw ParseFault("der", "duplicate dictionary key", key.body.origin());
       auto value = element(pair.body, key.next);
       if (value.next != pair.body.size())
-        throw ParseFault("der", "trailing bytes in dictionary entry");
+        throw ParseFault("der", "trailing bytes in dictionary entry",
+                         pair.body.origin());
       values[key_value] = decode_value(value, depth + 1, remaining);
       offset = pair.next;
     }
     return values;
   }
-  throw ParseFault("der", "unsupported DER tag " + std::to_string(item.tag));
+  throw ParseFault("der", "unsupported DER tag " + std::to_string(item.tag),
+                   at);
 }
 } // namespace
 ClaimNode parse_plist(ByteView bytes) {
@@ -237,10 +242,12 @@ ClaimNode parse_der(ByteView bytes) {
   auto version = element(root.body, 0);
   if (version.tag != 2 || version.body.size() != 1 ||
       version.body.integer(0, 1) != 1)
-    throw ParseFault("der", "unsupported entitlement version");
+    throw ParseFault("der", "unsupported entitlement version",
+                     version.body.origin());
   auto dictionary = element(root.body, version.next);
   if (dictionary.tag != 0xb0 || dictionary.next != root.body.size())
-    throw ParseFault("der", "invalid dictionary wrapper or trailing bytes");
+    throw ParseFault("der", "invalid dictionary wrapper or trailing bytes",
+                     dictionary.body.origin());
   std::size_t remaining = max_nodes;
   return decode_value(dictionary, 0, remaining);
 }

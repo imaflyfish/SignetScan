@@ -44,6 +44,9 @@ public:
       : bytes_(bytes), stage_(std::move(stage)), origin_(origin) {}
   std::size_t size() const { return bytes_.size(); }
   ByteView bytes() const { return bytes_; }
+  // Where this window starts in the original input, so a caller rejecting the
+  // bytes it holds can report the same location the reader itself would.
+  std::uint64_t origin() const { return origin_; }
   void require(std::uint64_t offset, std::uint64_t length) const;
   ByteWindow region(std::uint64_t offset, std::uint64_t length) const;
   std::uint64_t integer(std::uint64_t offset, unsigned width,
