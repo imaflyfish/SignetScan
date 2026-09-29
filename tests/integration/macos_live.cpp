@@ -223,6 +223,26 @@ int main(int argc, char **argv) {
     check(!session.inspect_path(flat).failed() &&
               BundleLayout::discover(flat)->flat,
           "flat bundle layout");
+    auto fallback = root / "Fallback.app";
+    fs::create_directories(fallback);
+    fs::copy_file(root / "linked", fallback / "zdemo");
+    write_text(fallback / "Info.plist",
+               "<?xml version=\"1.0\"?><plist "
+               "version=\"1.0\"><dict><key>CFBundleIdentifier</"
+               "key><string>test.signet-scan.fallback</string></dict></plist>");
+    check(BundleLayout::discover(fallback)->executable.filename() == "zdemo",
+          "undeclared executable falls back to the first image in the folder");
+    auto blocked = fallback / "adata";
+    write_text(blocked, "not an image\n");
+    fs::permissions(blocked, fs::perms::none);
+    if (std::ifstream(blocked, std::ios::binary)) {
+      std::cerr << "SKIP: current user bypasses fixture read permissions\n";
+    } else {
+      check(session.inspect_path(fallback).failed(),
+            "unreadable candidate refuses the executable fallback");
+    }
+    fs::permissions(blocked, fs::perms::owner_read | fs::perms::owner_write);
+    fs::remove(blocked);
     auto normal = run({cli, "--json", (root / "entitled").string()});
     auto output = ClaimNode::parse(normal.output);
     check(normal.status == 0 && output["inputs"].size() == 1,

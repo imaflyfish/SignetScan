@@ -18,10 +18,18 @@ bool beneath(const fs::path &root, const fs::path &candidate) {
       return false;
   return true;
 }
-bool seems_image(const fs::path &path) {
+// Nothing when the file could not be read. That is not evidence that it is not
+// a Mach-O, and a caller choosing between candidates must not treat it as such.
+// A file shorter than four bytes reads short without failing, and is simply not
+// a Mach-O.
+std::optional<bool> seems_image(const fs::path &path) {
   std::ifstream stream(path, std::ios::binary);
+  if (!stream)
+    return std::nullopt;
   std::array<std::uint8_t, 4> prefix{};
   stream.read(reinterpret_cast<char *>(prefix.data()), 4);
+  if (stream.bad())
+    return std::nullopt;
   return stream.gcount() == 4 && MachImageSet::recognises(prefix);
 }
 std::string digest_algorithm(std::size_t bytes) {
@@ -362,14 +370,33 @@ std::optional<BundleLayout> BundleLayout::discover(const fs::path &root) {
           choices.push_back(entry.path());
         }
         std::sort(choices.begin(), choices.end());
+        // This fallback names the first Mach-O in the folder as the bundle's
+        // executable, which is only sound if every earlier candidate could be
+        // examined. A file that could not be read might be the one meant here,
+        // so refuse rather than silently name a later, unrelated image.
+        std::optional<fs::path> unreadable;
         for (const auto &choice : choices) {
           auto candidate = BundlePath::resolve(
               bundle.content, choice.lexically_relative(bundle.content));
-          if (fs::is_regular_file(candidate) && seems_image(candidate)) {
+          if (!fs::is_regular_file(candidate))
+            continue;
+          auto probe = seems_image(candidate);
+          if (!probe) {
+            if (!unreadable)
+              unreadable = candidate;
+            continue;
+          }
+          if (*probe) {
+            if (unreadable)
+              break;
             bundle.executable = candidate;
             break;
           }
         }
+        if (bundle.executable.empty() && unreadable)
+          throw ParseFault("bundle",
+                           "cannot read a candidate bundle executable: " +
+                               unreadable->filename().string());
       }
     }
     return bundle;

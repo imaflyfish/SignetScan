@@ -26,6 +26,12 @@ mismatched digest widths, nonminimal DER lengths and integers, duplicate DER key
 invalid UTF-8, and trailing DER values. An empty encoded entitlement slot is
 invalid; an encoded empty dictionary is valid.
 
+When a bundle's `Info.plist` does not name its executable, the inspector falls
+back to the first Mach-O in the executable folder. That is only sound if every
+earlier candidate could be examined, so a candidate it cannot read stops the
+fallback rather than letting a later, unrelated image be named as the bundle's
+executable.
+
 A slice carries at most one signature, encryption and build load command. A
 second one is rejected rather than allowed to replace the first, because the
 report would otherwise describe one of two contradictory declarations without
