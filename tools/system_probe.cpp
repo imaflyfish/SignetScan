@@ -61,8 +61,8 @@ int main(int argc, char **argv) {
           continue;
         }
         auto truth =
-            inspect_tools::execute({"/usr/bin/codesign", "-d", "-vvv", "--arch",
-                                    slice.image.architecture, path});
+            scan_tools::execute({"/usr/bin/codesign", "-d", "-vvv", "--arch",
+                                 slice.image.architecture, path});
         if (truth.status != 0) {
           issues.push_back({{"path", path},
                             {"architecture", slice.image.architecture},
@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
             bad.push_back("plist/DER typed declarations disagree");
         }
         if (slice.claims.source != "absent") {
-          auto entitlement = inspect_tools::execute(
+          auto entitlement = scan_tools::execute(
               {"/usr/bin/codesign", "-d", "--entitlements", ":-", "--xml",
                "--arch", slice.image.architecture, path});
           auto start = entitlement.output.find("<?xml");

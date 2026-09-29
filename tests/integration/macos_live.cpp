@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
       }
     } cleanup{root};
     auto run = [&](std::vector<std::string> args) {
-      return inspect_tools::execute(args);
+      return scan_tools::execute(args);
     };
     auto must = [&](std::vector<std::string> args) {
       auto result = run(std::move(args));

@@ -8,7 +8,7 @@
 #include <unistd.h>
 extern char **environ;
 
-namespace inspect_tools {
+namespace scan_tools {
 struct CommandOutcome {
   int status;
   std::string output;
@@ -66,4 +66,4 @@ inline CommandOutcome execute(const std::vector<std::string> &arguments) {
   return {WIFEXITED(status) ? WEXITSTATUS(status) : 128 + WTERMSIG(status),
           std::string(bytes.begin(), bytes.end())};
 }
-} // namespace inspect_tools
+} // namespace scan_tools
