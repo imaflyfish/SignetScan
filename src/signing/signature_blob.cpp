@@ -1,5 +1,5 @@
-#include <signet_scan/audit.hpp>
 #include <set>
+#include <signet_scan/audit.hpp>
 
 namespace signet_scan {
 namespace {
@@ -138,7 +138,7 @@ SignatureBlob SignatureBlob::decode(ByteView bytes) {
   auto length = outer.integer(4, 4), count = outer.integer(8, 4);
   if (length < 12 || count > 64)
     throw ParseFault("signature",
-                        "invalid signature container length or count");
+                     "invalid signature container length or count");
   auto input = outer.region(0, length);
   auto table_end = 12 + count * 8;
   input.require(0, table_end);
@@ -159,8 +159,7 @@ SignatureBlob SignatureBlob::decode(ByteView bytes) {
     auto child = input.region(start, extent);
     for (const auto &range : ranges)
       if (start < range.second && range.first < start + extent)
-        throw ParseFault("signature", "overlapping signature children",
-                            start);
+        throw ParseFault("signature", "overlapping signature children", start);
     ranges.emplace_back(start, start + extent);
     signature.entries.push_back({{"slot", slot},
                                  {"magic", child_magic},
@@ -169,15 +168,15 @@ SignatureBlob SignatureBlob::decode(ByteView bytes) {
     if (slot == 0 || (slot >= 0x1000 && slot < 0x1005)) {
       if (child_magic != 0xfade0c02)
         throw ParseFault("signature", "CodeDirectory slot has wrong magic",
-                            start);
+                         start);
       signature.directories.push_back(directory(child, slot));
     } else if (slot == 5 || slot == 7) {
       if (child_magic != (slot == 5 ? 0xfade7171U : 0xfade7172U))
         throw ParseFault("signature", "entitlement slot has wrong magic",
-                            start);
+                         start);
       if (extent - 8 > max_document_bytes)
-        throw ParseFault("signature",
-                            "entitlement document exceeds byte limit", start);
+        throw ParseFault("signature", "entitlement document exceeds byte limit",
+                         start);
       auto body = child.region(8, extent - 8).bytes();
       auto copy = std::vector<std::uint8_t>(body.begin(), body.end());
       if (slot == 5)

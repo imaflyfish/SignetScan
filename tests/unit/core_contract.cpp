@@ -1,7 +1,7 @@
 #include <functional>
 #include <iostream>
-#include <signet_scan/audit.hpp>
 #include <plist/plist.h>
+#include <signet_scan/audit.hpp>
 
 using namespace signet_scan;
 using Buffer = std::vector<std::uint8_t>;
@@ -154,12 +154,12 @@ int main() {
   plist_free(native);
   check(binary == plist, "binary plist preserves values and order");
   std::string abc = "abc";
-  check(
-      compute_digest(
-          ByteView(reinterpret_cast<const std::uint8_t *>(abc.data()), abc.size()),
-          "sha256") ==
-          "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
-      "published SHA256 vector");
+  check(compute_digest(
+            ByteView(reinterpret_cast<const std::uint8_t *>(abc.data()),
+                     abc.size()),
+            "sha256") ==
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+        "published SHA256 vector");
   auto inspected = AuditSession().inspect_bytes(thin());
   check(!inspected.failed(), "unsigned is a finding, not a parser failure");
   check(inspected.observations().at(0).code == "unsigned",
@@ -177,9 +177,10 @@ int main() {
   inspected.images[0].signing = signature;
   inspected.images[0].signing->directories[0].attributes = 0x10002;
   inspected.images[0].signing->directories[0].executable_flags = 0x41;
-  inspected.images[0].observations = {{"z-low", Severity::low, "low", "", {}},
-                                      {"z-high", Severity::high, "high", "", {}},
-                                      {"a-high", Severity::high, "high", "", {}}};
+  inspected.images[0].observations = {
+      {"z-low", Severity::low, "low", "", {}},
+      {"z-high", Severity::high, "high", "", {}},
+      {"a-high", Severity::high, "high", "", {}}};
   report = JsonWriter::render({inspected});
   auto encoded_directory =
       report["inputs"][0]["images"][0]["signing"]["directories"][0];
@@ -229,14 +230,14 @@ int main() {
   rejects("plist root must be dictionary", [&] {
     parse_plist(
         ByteView(reinterpret_cast<const std::uint8_t *>(invalid_root.data()),
-              invalid_root.size()));
+                 invalid_root.size()));
   });
   inspected.resources = SealVerdict{};
   inspected.resources->executable = "Contents/MacOS/demo";
-  check(JsonWriter::render(
-            {inspected})["inputs"][0]["resources"]["executable"] ==
-            "Contents/MacOS/demo",
-        "bundle executable reported");
+  check(
+      JsonWriter::render({inspected})["inputs"][0]["resources"]["executable"] ==
+          "Contents/MacOS/demo",
+      "bundle executable reported");
   std::cout << passed << " checks passed; " << failed << " failed\n";
   return failed ? 1 : 0;
 }

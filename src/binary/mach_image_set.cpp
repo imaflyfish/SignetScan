@@ -1,6 +1,6 @@
 #include <algorithm>
-#include <signet_scan/audit.hpp>
 #include <set>
+#include <signet_scan/audit.hpp>
 
 namespace signet_scan {
 namespace {
@@ -53,7 +53,7 @@ MachSlice read_slice(ByteWindow input, std::uint64_t origin) {
     auto extent = commands.integer(position + 4, 4, big);
     if (extent < 8 || extent % 4 != 0)
       throw ParseFault("macho", "invalid load command size",
-                          origin + header_bytes + position);
+                       origin + header_bytes + position);
     auto command = commands.region(position, extent);
     auto value = [&](unsigned offset, unsigned width = 4) {
       return command.integer(offset, width, big);
@@ -121,8 +121,8 @@ MachSlice read_slice(ByteWindow input, std::uint64_t origin) {
   }
   if (position != command_bytes)
     throw ParseFault("macho",
-                        "load commands do not consume their declared region",
-                        origin + header_bytes + position);
+                     "load commands do not consume their declared region",
+                     origin + header_bytes + position);
   return slice;
 }
 } // namespace
@@ -159,7 +159,7 @@ std::vector<MachSlice> MachImageSet::decode(ByteView bytes) {
     auto length = input.integer(start + (wide ? 16 : 12), wide ? 8 : 4, big);
     if (offset < table_end || length < 28)
       throw ParseFault("macho", "fat slice overlaps header or is too short",
-                          start);
+                       start);
     auto alignment = input.integer(start + (wide ? 24 : 16), 4, big);
     if (alignment > 63 || (offset & ((std::uint64_t(1) << alignment) - 1)))
       throw ParseFault("macho", "invalid fat slice alignment", start);
@@ -171,8 +171,8 @@ std::vector<MachSlice> MachImageSet::decode(ByteView bytes) {
     auto slice = read_slice(view, offset);
     if (slice.cpu_kind != input.integer(start, 4, big) ||
         slice.cpu_variant != input.integer(start + 4, 4, big))
-      throw ParseFault(
-          "macho", "fat architecture disagrees with slice header", start);
+      throw ParseFault("macho", "fat architecture disagrees with slice header",
+                       start);
     images.push_back(std::move(slice));
   }
   return images;

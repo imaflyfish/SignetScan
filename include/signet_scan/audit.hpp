@@ -24,8 +24,7 @@ struct FaultNote {
 class ParseFault final : public std::runtime_error {
 public:
   FaultNote diagnostic;
-  ParseFault(std::string stage, std::string message,
-                std::uint64_t offset = 0)
+  ParseFault(std::string stage, std::string message, std::uint64_t offset = 0)
       : std::runtime_error(message),
         diagnostic{std::move(stage), std::move(message), offset} {}
 };
@@ -66,7 +65,7 @@ struct MachSlice {
   std::vector<std::string> search_paths;
   std::optional<std::pair<std::uint64_t, std::uint64_t>> signature_range;
   ClaimNode commands = ClaimNode::array(), encryption = nullptr,
-             build = nullptr;
+            build = nullptr;
 };
 class MachImageSet {
 public:
@@ -105,7 +104,7 @@ ClaimNode parse_plist(ByteView input);
 ClaimNode parse_der(ByteView input);
 std::string compute_digest(ByteView input, const std::string &algorithm);
 std::string digest_of_file(const std::filesystem::path &path,
-                        const std::string &algorithm);
+                           const std::string &algorithm);
 std::vector<std::uint8_t> load_input(const std::filesystem::path &path,
                                      std::uint64_t limit = max_input_bytes);
 std::string hex_encode(ByteView bytes);
@@ -152,7 +151,7 @@ public:
 class SealManifest {
 public:
   static SealVerdict inspect(const BundleLayout &bundle,
-                                const std::vector<SliceOutcome> &images);
+                             const std::vector<SliceOutcome> &images);
 };
 struct AuditReport {
   std::string path;
@@ -169,10 +168,10 @@ struct AuditOptions {
 class AuditSession {
 public:
   AuditReport inspect_bytes(ByteView input,
-                                 const std::string &label = "<memory>") const;
+                            const std::string &label = "<memory>") const;
   AuditReport inspect_file(const std::filesystem::path &path) const;
   AuditReport inspect_path(const std::filesystem::path &path,
-                                AuditOptions options = {}) const;
+                           AuditOptions options = {}) const;
 };
 class JsonWriter {
 public:
@@ -181,7 +180,7 @@ public:
 class TextWriter {
 public:
   static std::string render(const std::vector<AuditReport> &results,
-                            Severity minimum = Severity::info, bool verbose = false,
-                            bool summary = false);
+                            Severity minimum = Severity::info,
+                            bool verbose = false, bool summary = false);
 };
 } // namespace signet_scan

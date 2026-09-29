@@ -1,5 +1,5 @@
-#include <signet_scan/audit.hpp>
 #include <set>
+#include <signet_scan/audit.hpp>
 
 namespace signet_scan {
 std::string severity_label(Severity impact) {
@@ -114,7 +114,8 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
         "algorithms.");
   for (auto [flag, code, level, description] :
        std::vector<std::tuple<unsigned, std::string, Severity, std::string>>{
-           {4, "cs-get-task-allow", Severity::high, "Task-access flag declared"},
+           {4, "cs-get-task-allow", Severity::high,
+            "Task-access flag declared"},
            {0x20, "cs-invalid-allowed", Severity::high,
             "Invalid-signature execution flag declared"},
            {8, "cs-installer", Severity::low, "Installer flag declared"}})
@@ -173,7 +174,7 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
            {Severity::high, "Requests debugger capabilities"}},
           {"com.apple.security.cs.disable-library-validation",
            {Severity::high, "Requests loading libraries without the normal "
-                          "signing-team restriction"}},
+                            "signing-team restriction"}},
           {"com.apple.security.cs.allow-unsigned-executable-memory",
            {Severity::high, "Requests unsigned executable memory"}},
           {"com.apple.security.cs.disable-executable-page-protection",
@@ -211,7 +212,8 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
        "Declares an Apple-private entitlement"},
       {"com.apple.security.device.", Severity::info, "Requests device access"},
       {"com.apple.security.files.", Severity::info, "Requests file access"},
-      {"com.apple.security.network.", Severity::info, "Requests network access"}};
+      {"com.apple.security.network.", Severity::info,
+       "Requests network access"}};
   for (auto entry = facts.claims.selected.begin();
        entry != facts.claims.selected.end(); ++entry) {
     if (entry.value().is_boolean() && !entry.value().get<bool>())
@@ -235,7 +237,8 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
   }
   auto signature_offset = image.signature_range->first;
   if (primary.covered_bytes && primary.covered_bytes < signature_offset)
-    add("signature-gap", Severity::high, "Signature coverage metadata ends early",
+    add("signature-gap", Severity::high,
+        "Signature coverage metadata ends early",
         "The declared code limit precedes the signature region.",
         {{"covered_bytes", primary.covered_bytes},
          {"signature_offset", signature_offset},

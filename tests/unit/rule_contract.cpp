@@ -32,7 +32,7 @@ SliceOutcome fixture() {
   return result;
 }
 std::optional<Severity> finding(const SliceOutcome &fixture,
-                              const std::string &code) {
+                                const std::string &code) {
   for (const auto &result : AuditRuleSet::evaluate(fixture))
     if (result.code == code)
       return result.impact;
@@ -120,10 +120,12 @@ int main() {
       {"com.apple.security.get-task-allow", Severity::high},
       {"com.apple.security.cs.debugger", Severity::high},
       {"com.apple.security.cs.disable-library-validation", Severity::high},
-      {"com.apple.security.cs.allow-unsigned-executable-memory", Severity::high},
+      {"com.apple.security.cs.allow-unsigned-executable-memory",
+       Severity::high},
       {"com.apple.security.cs.disable-executable-page-protection",
        Severity::high},
-      {"com.apple.security.cs.allow-dyld-environment-variables", Severity::high},
+      {"com.apple.security.cs.allow-dyld-environment-variables",
+       Severity::high},
       {"com.apple.private.security.no-sandbox", Severity::high},
       {"task_for_pid-allow", Severity::high},
       {"platform-application", Severity::high},
@@ -177,7 +179,8 @@ int main() {
   flags.image.image_kind = 6;
   check(!finding(flags, "no-pie"), "PIE not required for dylib");
   flags.image.header_flags = 0x20000;
-  check(finding(flags, "executable-stack") == Severity::high, "executable stack");
+  check(finding(flags, "executable-stack") == Severity::high,
+        "executable stack");
   auto segment = clean;
   SegmentEntry mapping;
   mapping.label = "__TEST";
@@ -201,7 +204,8 @@ int main() {
   check(!finding(encrypted, "encrypted"), "unencrypted range");
   auto gap = clean;
   gap.signing->directories[0].covered_bytes = 2048;
-  check(finding(gap, "signature-gap") == Severity::high, "declared coverage gap");
+  check(finding(gap, "signature-gap") == Severity::high,
+        "declared coverage gap");
   gap.signing->directories[0].covered_bytes = 8192;
   check(finding(gap, "code-slot-shortfall") == Severity::high,
         "insufficient page slots");

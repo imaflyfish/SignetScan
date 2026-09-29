@@ -1,8 +1,8 @@
 #include <array>
 #include <fstream>
 #include <iostream>
-#include <signet_scan/audit.hpp>
 #include <set>
+#include <signet_scan/audit.hpp>
 
 namespace {
 using namespace signet_scan;
@@ -123,8 +123,7 @@ int main(int argc, char **argv) {
         for (const auto &file : files)
           inspect(file);
         if (files.empty())
-          throw ParseFault("input",
-                              "no Mach-O files found: " + path.string());
+          throw ParseFault("input", "no Mach-O files found: " + path.string());
       } catch (const ParseFault &error) {
         AuditReport result;
         result.path = path.string();
@@ -142,8 +141,8 @@ int main(int argc, char **argv) {
                        2, ' ', false, nlohmann::json::error_handler_t::replace)
                 << '\n';
     else
-      std::cout << TextWriter::render(results, options.minimum,
-                                       options.verbose, options.summary);
+      std::cout << TextWriter::render(results, options.minimum, options.verbose,
+                                      options.summary);
     if (std::any_of(results.begin(), results.end(),
                     [](const auto &result) { return result.failed(); }))
       return 2;

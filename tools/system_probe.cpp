@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
                 entitlement.output.substr(start, end + 8 - start);
             auto declarations = parse_plist(
                 ByteView(reinterpret_cast<const std::uint8_t *>(text.data()),
-                      text.size()));
+                         text.size()));
             ++claim_compared;
             if (nlohmann::json(declarations) !=
                 nlohmann::json(slice.claims.selected))
@@ -153,14 +153,14 @@ int main(int argc, char **argv) {
       }
     }
     ClaimNode report = {{"files_scanned", paths.size()},
-                         {"macho_files", files},
-                         {"slices", slices},
-                         {"metadata_compared", compared},
-                         {"plist_der_pairs", claim_pairs},
-                         {"codesign_entitlements_compared", claim_compared},
-                         {"issue_count", issues.size()},
-                         {"issues", issues},
-                         {"skipped", skipped}};
+                        {"macho_files", files},
+                        {"slices", slices},
+                        {"metadata_compared", compared},
+                        {"plist_der_pairs", claim_pairs},
+                        {"codesign_entitlements_compared", claim_compared},
+                        {"issue_count", issues.size()},
+                        {"issues", issues},
+                        {"skipped", skipped}};
     std::cout << report.dump(2) << '\n';
     return issues.empty() && compared ? 0 : 1;
   } catch (const std::exception &error) {

@@ -2,9 +2,9 @@
 #include <cerrno>
 #include <cstring>
 #include <fcntl.h>
-#include <signet_scan/audit.hpp>
 #include <memory>
 #include <openssl/evp.h>
+#include <signet_scan/audit.hpp>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -12,7 +12,7 @@ namespace signet_scan {
 namespace {
 struct FileSlot {
   int descriptor;
-  struct stat initial{};
+  struct stat initial {};
   explicit FileSlot(const std::filesystem::path &path)
       : descriptor(open(path.c_str(), O_RDONLY | O_CLOEXEC | O_NONBLOCK)) {
     if (descriptor < 0)
@@ -20,13 +20,13 @@ struct FileSlot {
     if (fstat(descriptor, &initial) != 0 || !S_ISREG(initial.st_mode)) {
       close(descriptor);
       throw ParseFault("input", "input is not a readable regular file: " +
-                                       path.string());
+                                    path.string());
     }
   }
   ~FileSlot() { close(descriptor); }
   FileSlot(const FileSlot &) = delete;
   void unchanged() const {
-    struct stat current{};
+    struct stat current {};
     if (fstat(descriptor, &current) != 0 ||
         initial.st_size != current.st_size ||
         initial.st_mtime != current.st_mtime ||
@@ -100,7 +100,7 @@ std::string compute_digest(ByteView bytes, const std::string &algorithm) {
   return digest.finish();
 }
 std::string digest_of_file(const std::filesystem::path &path,
-                        const std::string &algorithm) {
+                           const std::string &algorithm) {
   FileSlot input(path);
   HashContext digest(algorithm);
   std::array<std::uint8_t, 65536> block{};
@@ -122,8 +122,7 @@ std::string digest_of_file(const std::filesystem::path &path,
 void ByteWindow::require(std::uint64_t offset, std::uint64_t length) const {
   if (offset > bytes_.size() || length > bytes_.size() - offset)
     throw ParseFault(stage_, "range exceeds enclosing structure",
-                        origin_ +
-                            std::min<std::uint64_t>(offset, bytes_.size()));
+                     origin_ + std::min<std::uint64_t>(offset, bytes_.size()));
 }
 ByteWindow ByteWindow::region(std::uint64_t offset,
                               std::uint64_t length) const {

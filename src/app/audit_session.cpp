@@ -26,8 +26,8 @@ std::vector<Remark> AuditReport::observations() const {
                    });
   return collected;
 }
-AuditReport
-AuditSession::inspect_bytes(ByteView bytes, const std::string &label) const {
+AuditReport AuditSession::inspect_bytes(ByteView bytes,
+                                        const std::string &label) const {
   AuditReport result;
   result.path = label;
   result.byte_length = bytes.size();
@@ -76,9 +76,8 @@ AuditSession::inspect_file(const std::filesystem::path &path) const {
     return result;
   }
 }
-AuditReport
-AuditSession::inspect_path(const std::filesystem::path &path,
-                                AuditOptions options) const {
+AuditReport AuditSession::inspect_path(const std::filesystem::path &path,
+                                       AuditOptions options) const {
   try {
     auto bundle = BundleLayout::discover(path);
     if (!bundle)

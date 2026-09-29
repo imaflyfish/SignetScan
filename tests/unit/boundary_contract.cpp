@@ -225,14 +225,12 @@ int main(int argc, char **argv) {
   cd = directory();
   number(cd, 20, 80);
   sig = container({{0, cd}});
-  rejects("identifier outside directory",
-          [&] { SignatureBlob::decode(sig); });
+  rejects("identifier outside directory", [&] { SignatureBlob::decode(sig); });
   cd = directory();
   number(cd, 24, 1);
   number(cd, 16, 44);
   sig = container({{0, cd}});
-  rejects("special slots overlap header",
-          [&] { SignatureBlob::decode(sig); });
+  rejects("special slots overlap header", [&] { SignatureBlob::decode(sig); });
   auto valid = declaration(key_value({1, 1, 255}));
   check(parse_der(valid)["k"] == true, "DER constructed boolean");
   for (unsigned version :
@@ -288,8 +286,8 @@ int main(int argc, char **argv) {
   auto dictionary = tlv(0xb0, key_value({1, 1, 255}));
   check(parse_der(declaration(key_value(dictionary)))["k"]["k"] == true,
         "nested DER dictionary");
-  check(parse_der(
-            declaration(key_value(tlv(0x30, dictionary))))["k"][0]["k"] == true,
+  check(parse_der(declaration(key_value(tlv(0x30, dictionary))))["k"][0]["k"] ==
+            true,
         "DER array of dictionaries");
   auto long_string = tlv(12, Buffer(180, 'q'));
   check(parse_der(declaration(key_value(long_string)))["k"]
@@ -375,8 +373,8 @@ int main(int argc, char **argv) {
     save("fat64", fat(true, true));
     save("signature", container({{0, directory()}}));
     save("entitlement", valid);
-    save("plist",
-         ByteView(reinterpret_cast<const std::uint8_t *>(xml.data()), xml.size()));
+    save("plist", ByteView(reinterpret_cast<const std::uint8_t *>(xml.data()),
+                           xml.size()));
   }
   std::cout << passed << " boundary checks passed; " << failed << " failed\n";
   return failed ? 1 : 0;

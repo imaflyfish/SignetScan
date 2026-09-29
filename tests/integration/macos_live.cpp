@@ -235,8 +235,7 @@ int main(int argc, char **argv) {
           "partial failure preserves JSON and returns 2");
     auto invalid = run({cli, "--json", (root / "missing").string()});
     check(invalid.status == 2 &&
-              ClaimNode::parse(invalid.output)["summary"]["failed_inputs"] ==
-                  1,
+              ClaimNode::parse(invalid.output)["summary"]["failed_inputs"] == 1,
           "all failures preserve JSON");
     check(run({cli}).status == 2, "missing CLI path rejected");
     check(run({cli, "--fail-on", "catastrophic", (root / "linked").string()})

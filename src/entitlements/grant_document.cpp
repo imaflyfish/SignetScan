@@ -1,10 +1,10 @@
 #include <bit>
 #include <cmath>
 #include <cstdlib>
-#include <signet_scan/audit.hpp>
 #include <memory>
 #include <plist/plist.h>
 #include <set>
+#include <signet_scan/audit.hpp>
 
 namespace signet_scan {
 namespace {
@@ -134,7 +134,7 @@ DerItem element(ByteWindow input, std::uint64_t offset) {
   return {tag, input.region(start, length), start + length};
 }
 ClaimNode decode_value(const DerItem &item, unsigned depth,
-                        std::size_t &remaining) {
+                       std::size_t &remaining) {
   if (depth > 32 || remaining == 0)
     throw ParseFault("der", "document exceeds nesting or node limit");
   --remaining;
@@ -241,8 +241,7 @@ ClaimNode parse_der(ByteView bytes) {
   std::size_t remaining = maximum_nodes;
   return decode_value(dictionary, 0, remaining);
 }
-GrantDocument
-GrantDocument::decode(const SignatureBlob &signature) {
+GrantDocument GrantDocument::decode(const SignatureBlob &signature) {
   GrantDocument document;
   if (signature.plist_claims)
     try {

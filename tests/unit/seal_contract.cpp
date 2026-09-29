@@ -1,7 +1,7 @@
 #include <fstream>
 #include <iostream>
-#include <signet_scan/audit.hpp>
 #include <plist/plist.h>
+#include <signet_scan/audit.hpp>
 #include <unistd.h>
 using namespace signet_scan;
 namespace fs = std::filesystem;
@@ -62,7 +62,8 @@ bool has(const SealVerdict &report, const std::string &code) {
 }
 ClaimNode hash_value(const std::string &value) {
   auto hex = compute_digest(
-      ByteView(reinterpret_cast<const std::uint8_t *>(value.data()), value.size()),
+      ByteView(reinterpret_cast<const std::uint8_t *>(value.data()),
+               value.size()),
       "sha256");
   std::vector<std::uint8_t> bytes;
   for (std::size_t index = 0; index < hex.size(); index += 2)
@@ -74,8 +75,7 @@ ClaimNode hash_value(const std::string &value) {
 int main() {
   try {
     std::string pattern =
-        (fs::temp_directory_path() / "signet-scan-seal-tests-XXXXXX")
-            .string();
+        (fs::temp_directory_path() / "signet-scan-seal-tests-XXXXXX").string();
     if (!mkdtemp(pattern.data()))
       throw std::runtime_error("mkdtemp failed");
     fs::path workspace = pattern;
@@ -89,10 +89,10 @@ int main() {
     auto base = workspace / "App/Contents";
     fs::create_directories(base);
     BundleLayout bundle{workspace / "App",
-                            base,
-                            base / "_CodeSignature/CodeResources",
-                            {},
-                            false};
+                        base,
+                        base / "_CodeSignature/CodeResources",
+                        {},
+                        false};
     auto assess = [&](ClaimNode document) {
       save(bundle.manifest, document);
       return SealManifest::inspect(bundle, {});
@@ -216,8 +216,8 @@ int main() {
     write(base / "Resources/legacy-unlisted", "later");
     check(has(assess(legacy), "resource-unsealed"),
           "legacy-only seal rules detect unlisted files");
-    legacy["rules"]["^Resources/legacy-unlisted$"] = {
-        {"omit", true}, {"weight", 30}};
+    legacy["rules"]["^Resources/legacy-unlisted$"] = {{"omit", true},
+                                                      {"weight", 30}};
     check(!has(assess(legacy), "resource-unsealed"),
           "legacy-only seal rules honor omission weights");
     fs::remove(base / "Resources/legacy-unlisted");
@@ -285,8 +285,7 @@ int main() {
           "manifest matches CodeDirectory special slot");
     auto other = image;
     other.signing->directories[0].special_digests[3] = std::string(64, '0');
-    check(SealManifest::inspect(bundle, {image, other}).linkage ==
-              "mismatch",
+    check(SealManifest::inspect(bundle, {image, other}).linkage == "mismatch",
           "all recorded architecture seals must agree");
     fs::remove(bundle.manifest);
     check(SealManifest::inspect(bundle, {image}).linkage == "absent",

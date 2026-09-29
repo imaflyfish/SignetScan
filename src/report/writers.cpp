@@ -4,7 +4,7 @@
 namespace signet_scan {
 namespace {
 ClaimNode flag_names(std::uint64_t bits,
-                      const std::map<std::uint64_t, std::string> &labels) {
+                     const std::map<std::uint64_t, std::string> &labels) {
   ClaimNode names = ClaimNode::array();
   for (const auto &[mask, label] : labels)
     if (bits & mask)
@@ -133,13 +133,13 @@ ClaimNode image_json(const SliceOutcome &report) {
   for (const auto &[kind, path] : image.dependencies)
     output["dependencies"].push_back({{"command", kind}, {"path", path}});
   ClaimNode signing = {{"state", !image.signature_range ? "absent"
-                                  : report.signing       ? "parsed"
-                                                         : "malformed"},
-                        {"cryptographic_verification", "not_performed"},
-                        {"code_page_verification", "not_performed"},
-                        {"directories", ClaimNode::array()},
-                        {"entries", ClaimNode::array()},
-                        {"cms_bytes", 0}};
+                                 : report.signing       ? "parsed"
+                                                        : "malformed"},
+                       {"cryptographic_verification", "not_performed"},
+                       {"code_page_verification", "not_performed"},
+                       {"directories", ClaimNode::array()},
+                       {"entries", ClaimNode::array()},
+                       {"cms_bytes", 0}};
   if (image.signature_range) {
     signing["slice_offset"] = image.signature_range->first;
     signing["byte_length"] = image.signature_range->second;
@@ -191,12 +191,11 @@ ClaimNode JsonWriter::render(const std::vector<AuditReport> &results) {
       summary["by_code"][finding.code] =
           summary["by_code"].value(finding.code, std::size_t(0)) + 1;
     }
-    ClaimNode input = {
-        {"path", result.path},
-        {"byte_length", result.byte_length},
-        {"status", result.failed() ? "incomplete" : "inspected"},
-        {"errors", diagnostics(result.errors)},
-        {"images", ClaimNode::array()}};
+    ClaimNode input = {{"path", result.path},
+                       {"byte_length", result.byte_length},
+                       {"status", result.failed() ? "incomplete" : "inspected"},
+                       {"errors", diagnostics(result.errors)},
+                       {"images", ClaimNode::array()}};
     for (const auto &image : result.images)
       input["images"].push_back(image_json(image));
     if (result.resources)
@@ -212,7 +211,7 @@ ClaimNode JsonWriter::render(const std::vector<AuditReport> &results) {
   return output;
 }
 std::string TextWriter::render(const std::vector<AuditReport> &results,
-                                Severity minimum, bool verbose, bool summary) {
+                               Severity minimum, bool verbose, bool summary) {
   std::ostringstream output;
   if (summary) {
     auto counts = JsonWriter::render(results)["summary"];

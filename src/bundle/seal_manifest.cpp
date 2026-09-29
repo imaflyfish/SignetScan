@@ -64,8 +64,8 @@ void merge_entry(SealEntry &target, const ClaimNode &value) {
     throw ParseFault("resources", "resource optional flag is not a boolean");
   // Conservatively retain a requirement from either manifest table. The usual
   // codesign localization records mark the resource optional in both tables.
-  target.optional = target.optional && value.is_object() &&
-                    value.value("optional", false);
+  target.optional =
+      target.optional && value.is_object() && value.value("optional", false);
   auto digest = [&](const ClaimNode &candidate) {
     if (!candidate.is_binary())
       throw ParseFault("resources", "resource digest is not binary data");
@@ -75,10 +75,11 @@ void merge_entry(SealEntry &target, const ClaimNode &value) {
       target.unknown = true;
     else {
       auto encoded = hex_encode(bytes);
-      const auto [entry, inserted] = target.digests.try_emplace(algorithm, encoded);
+      const auto [entry, inserted] =
+          target.digests.try_emplace(algorithm, encoded);
       if (!inserted && entry->second != encoded)
         throw ParseFault("resources", "conflicting " + algorithm +
-                                             " digests for one resource");
+                                          " digests for one resource");
     }
   };
   if (value.is_binary()) {
@@ -123,8 +124,8 @@ std::vector<SealPattern> compile_rules(const ClaimNode &table) {
         pcre2_compile(reinterpret_cast<PCRE2_SPTR>(pattern.data()),
                       pattern.size(), PCRE2_UTF, &error, &offset, nullptr);
     if (!expression)
-      throw ParseFault(
-          "resources", "resource rule could not compile: " + pattern, offset);
+      throw ParseFault("resources",
+                       "resource rule could not compile: " + pattern, offset);
     std::shared_ptr<pcre2_code> owner(expression, pcre2_code_free);
     double weight = 0;
     if (body.contains("weight")) {
@@ -141,10 +142,9 @@ std::vector<SealPattern> compile_rules(const ClaimNode &table) {
     if (!std::isfinite(weight))
       throw ParseFault("resources", "non-finite rule weight");
     result.push_back({std::move(owner),
-                      truth(body.value("omit", ClaimNode(false))) ? "omit"
-                      : truth(body.value("nested", ClaimNode(false)))
-                          ? "nested"
-                          : "hash",
+                      truth(body.value("omit", ClaimNode(false)))     ? "omit"
+                      : truth(body.value("nested", ClaimNode(false))) ? "nested"
+                                                                      : "hash",
                       weight});
   }
   std::stable_sort(result.begin(), result.end(),
@@ -174,12 +174,12 @@ std::string treatment(const std::string &path,
       return rule.treatment;
     if (status != PCRE2_ERROR_NOMATCH)
       throw ParseFault("resources",
-                          "resource rule matching failed or reached its limit");
+                       "resource rule matching failed or reached its limit");
   }
   return "none";
 }
 ClaimNode inspect_entry(const fs::path &base, const std::string &relative,
-                         const SealEntry &entry) {
+                        const SealEntry &entry) {
   ClaimNode result = {
       {"path", relative}, {"kind", entry.category()}, {"status", "ok"}};
   fs::path path;
@@ -294,13 +294,13 @@ void add_observations(SealVerdict &report) {
         {{"count", report.unlisted.size()},
          {"examples",
           ClaimNode(report.unlisted.begin(),
-                     report.unlisted.begin() +
-                         static_cast<std::ptrdiff_t>(std::min<std::size_t>(
-                             20, report.unlisted.size())))}});
+                    report.unlisted.begin() +
+                        static_cast<std::ptrdiff_t>(std::min<std::size_t>(
+                            20, report.unlisted.size())))}});
 }
 } // namespace
 fs::path BundlePath::resolve(const fs::path &root, const fs::path &relative,
-                               bool follow_leaf) {
+                             bool follow_leaf) {
   auto name = relative.string();
   if (relative.is_absolute() || name.find('\0') != std::string::npos ||
       name.starts_with('~'))
@@ -316,8 +316,7 @@ fs::path BundlePath::resolve(const fs::path &root, const fs::path &relative,
     throw ParseFault("resources", "symlink resolves outside the bundle");
   return resolved;
 }
-std::optional<BundleLayout>
-BundleLayout::discover(const fs::path &root) {
+std::optional<BundleLayout> BundleLayout::discover(const fs::path &root) {
   if (!fs::is_directory(root))
     return std::nullopt;
   for (bool flat : {false, true}) {
@@ -343,9 +342,10 @@ BundleLayout::discover(const fs::path &root) {
         throw ParseFault("bundle", "invalid CFBundleExecutable filename");
       auto candidate = BundlePath::resolve(bundle.content, folder / name);
       if (!fs::is_regular_file(candidate))
-        throw ParseFault("bundle",
-                            "declared bundle executable is missing or is not a regular file: " +
-                                name);
+        throw ParseFault(
+            "bundle",
+            "declared bundle executable is missing or is not a regular file: " +
+                name);
       bundle.executable = candidate;
     }
     if (bundle.executable.empty()) {
@@ -372,9 +372,8 @@ BundleLayout::discover(const fs::path &root) {
   }
   return std::nullopt;
 }
-SealVerdict
-SealManifest::inspect(const BundleLayout &bundle,
-                          const std::vector<SliceOutcome> &images) {
+SealVerdict SealManifest::inspect(const BundleLayout &bundle,
+                                  const std::vector<SliceOutcome> &images) {
   SealVerdict report;
   if (!bundle.executable.empty())
     report.executable =
@@ -413,7 +412,7 @@ SealManifest::inspect(const BundleLayout &bundle,
       if (document.contains(name)) {
         if (!document[name].is_object())
           throw ParseFault("resources",
-                              "resource file table is not a dictionary");
+                           "resource file table is not a dictionary");
         for (auto entry = document[name].begin(); entry != document[name].end();
              ++entry)
           merge_entry(entries[entry.key()], entry.value());
@@ -442,11 +441,11 @@ SealManifest::inspect(const BundleLayout &bundle,
       auto name = relative.generic_string();
       if (entries.contains(name))
         continue;
-      const bool sealed = document.contains("rules2")
-                              ? treatment(name, new_rules) == "hash" &&
-                                    (old_rules.empty() ||
-                                     treatment(name, old_rules) == "hash")
-                              : treatment(name, old_rules) == "hash";
+      const bool sealed =
+          document.contains("rules2")
+              ? treatment(name, new_rules) == "hash" &&
+                    (old_rules.empty() || treatment(name, old_rules) == "hash")
+              : treatment(name, old_rules) == "hash";
       if (sealed)
         unlisted.push_back(name);
     }
