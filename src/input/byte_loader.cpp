@@ -24,7 +24,10 @@ struct FileSlot {
     }
   }
   ~FileSlot() { close(descriptor); }
+  // Copying already closed the descriptor twice; assignment did too, because
+  // declaring only the copy constructor still leaves assignment implicit.
   FileSlot(const FileSlot &) = delete;
+  FileSlot &operator=(const FileSlot &) = delete;
   void unchanged() const {
     struct stat current {};
     if (fstat(descriptor, &current) != 0 ||

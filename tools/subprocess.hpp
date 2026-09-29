@@ -25,10 +25,16 @@ inline CommandOutcome execute(const std::vector<std::string> &arguments) {
   struct Cleanup {
     int descriptor;
     std::string path;
+    Cleanup(int opened, std::string file)
+        : descriptor(opened), path(std::move(file)) {}
     ~Cleanup() {
       close(descriptor);
       unlink(path.c_str());
     }
+    // A copy would close the descriptor and unlink the path a second time, by
+    // which point the number may name an unrelated open file.
+    Cleanup(const Cleanup &) = delete;
+    Cleanup &operator=(const Cleanup &) = delete;
   } cleanup{descriptor, temporary};
   posix_spawn_file_actions_t actions;
   posix_spawn_file_actions_init(&actions);
@@ -50,6 +56,7 @@ inline CommandOutcome execute(const std::vector<std::string> &arguments) {
   // and reap it, or the caller leaves a live process behind.
   struct Reaper {
     pid_t pending;
+    explicit Reaper(pid_t started) : pending(started) {}
     ~Reaper() {
       if (!pending)
         return;
@@ -58,6 +65,10 @@ inline CommandOutcome execute(const std::vector<std::string> &arguments) {
       while (waitpid(pending, &discarded, 0) < 0 && errno == EINTR) {
       }
     }
+    // A copy would signal the process twice, and after the first reap the
+    // number may already name an unrelated process.
+    Reaper(const Reaper &) = delete;
+    Reaper &operator=(const Reaper &) = delete;
   } reaper{child};
   int status = 0;
   auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
