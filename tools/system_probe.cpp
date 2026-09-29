@@ -12,6 +12,18 @@ std::string capture(const std::string &input, const std::string &expression) {
     return match[1].str();
   return "";
 }
+// A field this tool cannot read is a comparison that failed, like an absent
+// one. The captures are unbounded, so a long value would otherwise throw out of
+// std::stoul and abandon the whole corpus instead of recording one mismatch.
+bool hex_equals(const std::string &text, std::uint64_t expected) {
+  if (text.empty())
+    return false;
+  try {
+    return std::stoull(text, nullptr, 16) == expected;
+  } catch (const std::exception &) {
+    return false;
+  }
+}
 int main(int argc, char **argv) {
 #ifndef __APPLE__
   std::cerr << "codesign comparison requires macOS\n";
@@ -105,11 +117,9 @@ int main(int argc, char **argv) {
         auto flags = capture(
             truth.output,
             "CodeDirectory v=[0-9a-f]+ size=[0-9]+ flags=(0x[0-9a-f]+)");
-        if (version.empty() ||
-            std::stoul(version, nullptr, 16) != chosen->version)
+        if (!hex_equals(version, chosen->version))
           bad.push_back("directory version mismatch or unavailable");
-        if (flags.empty() ||
-            std::stoul(flags, nullptr, 16) != chosen->attributes)
+        if (!hex_equals(flags, chosen->attributes))
           bad.push_back("directory flags mismatch or unavailable");
         for (const auto &directory : slice.signing->directories) {
           auto algorithm = directory.algorithm_code == 3 ? "sha256-truncated"
