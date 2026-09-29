@@ -73,7 +73,10 @@ std::vector<Remark> AuditRuleSet::evaluate(const SliceOutcome &facts) {
     add("rpath-resolution", Severity::info, "Libraries use run-path search",
         "The declared search order affects which dependency is selected.",
         {{"search_paths", image.search_paths}, {"libraries", relative}});
-  if (!image.encryption.is_null() && image.encryption["identifier"] != 0)
+  // evaluate() reads a slice a caller may have built, not only one this parser
+  // produced, so the lookup must survive a record that omits the field.
+  if (image.encryption.is_object() &&
+      image.encryption.value("identifier", ClaimNode(0)) != 0)
     add("encrypted", Severity::info, "Encrypted range declared",
         "Static bytes in the declared encrypted range do not represent decoded "
         "instructions.",

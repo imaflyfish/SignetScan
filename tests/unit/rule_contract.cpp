@@ -202,6 +202,12 @@ int main() {
   check(finding(encrypted, "encrypted") == Severity::info, "encrypted range");
   encrypted.image.encryption["identifier"] = 0;
   check(!finding(encrypted, "encrypted"), "unencrypted range");
+  encrypted.image.encryption = {{"offset", 0}};
+  check(!finding(encrypted, "encrypted"),
+        "encryption record without an identifier reports nothing");
+  encrypted.image.encryption = "malformed";
+  check(!finding(encrypted, "encrypted"),
+        "encryption record that is not an object reports nothing");
   auto gap = clean;
   gap.signing->directories[0].covered_bytes = 2048;
   check(finding(gap, "signature-gap") == Severity::high,
