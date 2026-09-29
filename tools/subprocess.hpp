@@ -46,20 +46,31 @@ inline CommandOutcome execute(const std::vector<std::string> &arguments) {
   if (spawned)
     throw std::runtime_error("cannot start " + arguments[0] + ": " +
                              std::to_string(spawned));
+  // Every exit from the wait loop other than a completed child must still kill
+  // and reap it, or the caller leaves a live process behind.
+  struct Reaper {
+    pid_t pending;
+    ~Reaper() {
+      if (!pending)
+        return;
+      kill(pending, SIGKILL);
+      int discarded = 0;
+      while (waitpid(pending, &discarded, 0) < 0 && errno == EINTR) {
+      }
+    }
+  } reaper{child};
   int status = 0;
   auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
   for (;;) {
     auto state = waitpid(child, &status, WNOHANG);
-    if (state == child)
+    if (state == child) {
+      reaper.pending = 0;
       break;
+    }
     if (state < 0 && errno != EINTR)
       throw std::runtime_error("waitpid failed");
-    if (std::chrono::steady_clock::now() > deadline) {
-      kill(child, SIGKILL);
-      while (waitpid(child, &status, 0) < 0 && errno == EINTR) {
-      }
+    if (std::chrono::steady_clock::now() > deadline)
       throw std::runtime_error("process timed out: " + arguments[0]);
-    }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
   auto bytes = signet_scan::load_input(temporary, 8 * 1024 * 1024);
