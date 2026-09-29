@@ -353,7 +353,7 @@ std::optional<BundleLayout> BundleLayout::discover(const fs::path &root) {
       if (fs::is_directory(directory)) {
         std::vector<fs::path> choices;
         for (const auto &entry : fs::directory_iterator(directory)) {
-          if (choices.size() > 250000)
+          if (choices.size() > max_traversed_entries)
             throw ParseFault("bundle", "directory entry limit exceeded");
           choices.push_back(entry.path());
         }
@@ -427,7 +427,7 @@ SealVerdict SealManifest::inspect(const BundleLayout &bundle,
     std::size_t visited = 0;
     for (auto iterator = fs::recursive_directory_iterator(bundle.content);
          iterator != fs::recursive_directory_iterator(); ++iterator) {
-      if (++visited > 250000)
+      if (++visited > max_traversed_entries)
         throw ParseFault("resources", "resource traversal limit exceeded");
       const auto &path = iterator->path();
       auto relative = path.lexically_relative(bundle.content);

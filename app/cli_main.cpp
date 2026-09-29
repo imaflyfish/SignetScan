@@ -113,7 +113,7 @@ int main(int argc, char **argv) {
         std::vector<fs::path> files;
         std::size_t count = 0;
         for (const auto &entry : fs::recursive_directory_iterator(path)) {
-          if (++count > 250000)
+          if (++count > max_traversed_entries)
             throw ParseFault("input", "directory scan limit exceeded");
           auto state = entry.symlink_status();
           if (fs::is_regular_file(state) && needs_inspection(entry.path()))
