@@ -18,12 +18,7 @@ std::vector<Remark> AuditReport::observations() const {
   if (resources)
     collected.insert(collected.end(), resources->observations.begin(),
                      resources->observations.end());
-  std::stable_sort(collected.begin(), collected.end(),
-                   [](const auto &first, const auto &second) {
-                     return first.severity != second.severity
-                                ? first.severity > second.severity
-                                : first.code < second.code;
-                   });
+  sort_remarks(collected);
   return collected;
 }
 AuditReport AuditSession::inspect_bytes(ByteView bytes,

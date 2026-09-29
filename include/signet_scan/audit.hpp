@@ -118,6 +118,9 @@ struct Remark {
   std::string message, explanation;
   ClaimNode evidence = ClaimNode::object();
 };
+// The report order: strongest severity first, then code, preserving input order
+// for ties. Every emitter uses this so JSON and text cannot disagree.
+void sort_remarks(std::vector<Remark> &findings);
 struct SliceOutcome {
   MachSlice image;
   std::optional<SignatureBlob> signing;

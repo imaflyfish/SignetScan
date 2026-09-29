@@ -57,12 +57,7 @@ ClaimNode diagnostics(const std::vector<FaultNote> &errors) {
 ClaimNode observations(const std::vector<Remark> &findings) {
   ClaimNode rows = ClaimNode::array();
   auto ordered = findings;
-  std::stable_sort(ordered.begin(), ordered.end(),
-                   [](const auto &first, const auto &second) {
-                     return first.severity != second.severity
-                                ? first.severity > second.severity
-                                : first.code < second.code;
-                   });
+  sort_remarks(ordered);
   for (const auto &finding : ordered)
     rows.push_back({{"code", finding.code},
                     {"severity", severity_label(finding.severity)},

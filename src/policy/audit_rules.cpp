@@ -1,7 +1,16 @@
+#include <algorithm>
 #include <set>
 #include <signet_scan/audit.hpp>
 
 namespace signet_scan {
+void sort_remarks(std::vector<Remark> &findings) {
+  std::stable_sort(findings.begin(), findings.end(),
+                   [](const Remark &first, const Remark &second) {
+                     return first.severity != second.severity
+                                ? first.severity > second.severity
+                                : first.code < second.code;
+                   });
+}
 std::string severity_label(Severity severity) {
   switch (severity) {
   case Severity::high:
