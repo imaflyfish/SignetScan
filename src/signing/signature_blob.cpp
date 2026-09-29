@@ -17,14 +17,16 @@ CodeDirectoryEntry directory(ByteWindow input, std::uint32_t slot) {
   record.special_slots = word(24);
   record.code_slots = word(28);
   if (record.special_slots > 64 || record.code_slots > 4 * 1024 * 1024)
-    throw ParseFault("signature", "signature hash-slot count exceeds limit");
+    throw ParseFault("signature", "signature hash-slot count exceeds limit",
+                     input.origin() + 24);
   record.covered_bytes = word(32);
   record.digest_width = static_cast<std::uint8_t>(input.integer(36, 1));
   record.algorithm_code = static_cast<std::uint8_t>(input.integer(37, 1));
   record.platform = static_cast<std::uint8_t>(input.integer(38, 1));
   auto shift = input.integer(39, 1);
   if (shift > 63)
-    throw ParseFault("signature", "invalid code page shift");
+    throw ParseFault("signature", "invalid code page shift",
+                     input.origin() + 39);
   record.page_bytes = shift ? std::uint64_t(1) << shift : 0;
   unsigned header = 44;
   if (record.version >= 0x20100)
@@ -68,10 +70,12 @@ CodeDirectoryEntry directory(ByteWindow input, std::uint32_t slot) {
        {5, {"sha512", 64}}};
   auto algorithm = algorithms.find(record.algorithm_code);
   if (record.digest_width == 0 || record.digest_width > 64)
-    throw ParseFault("signature", "invalid hash slot width");
+    throw ParseFault("signature", "invalid hash slot width",
+                     input.origin() + 36);
   if (algorithm != algorithms.end()) {
     if (record.digest_width != algorithm->second.second)
-      throw ParseFault("signature", "hash width disagrees with algorithm");
+      throw ParseFault("signature", "hash width disagrees with algorithm",
+                       input.origin() + 36);
     record.algorithm = algorithm->second.first;
     record.digest = compute_digest(input.bytes(), record.algorithm);
     if (record.algorithm_code == 3)
@@ -81,7 +85,8 @@ CodeDirectoryEntry directory(ByteWindow input, std::uint32_t slot) {
   auto special_bytes =
       std::uint64_t(record.special_slots) * record.digest_width;
   if (special_bytes > hash_offset || hash_offset - special_bytes < header)
-    throw ParseFault("signature", "special hash slots overlap the header");
+    throw ParseFault("signature", "special hash slots overlap the header",
+                     input.origin() + 16);
   input.require(hash_offset - special_bytes, special_bytes);
   input.require(hash_offset,
                 std::uint64_t(record.code_slots) * record.digest_width);
@@ -134,7 +139,8 @@ SignatureBlob SignatureBlob::decode(ByteView bytes) {
   outer.require(0, 12);
   auto magic = outer.integer(0, 4);
   if (magic != 0xfade0cc0 && magic != 0xfade0b02)
-    throw ParseFault("signature", "invalid signature container magic");
+    throw ParseFault("signature", "invalid signature container magic",
+                     outer.origin());
   auto length = outer.integer(4, 4), count = outer.integer(8, 4);
   if (length < 12 || count > 64)
     throw ParseFault("signature",
