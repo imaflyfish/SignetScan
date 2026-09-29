@@ -197,6 +197,9 @@ SignatureBlob SignatureBlob::decode(ByteView bytes) {
       signature.cms_bytes = extent - 8;
     }
   }
+  // primary() throws when no slot-zero CodeDirectory was decoded. Reject that
+  // container here, while the caller is still reading it, rather than at
+  // whichever consumer first asks for the directory.
   (void)signature.primary();
   return signature;
 }
