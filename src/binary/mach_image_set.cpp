@@ -88,19 +88,22 @@ MachSlice read_slice(ByteWindow input, std::uint64_t origin) {
       command.require(0, 24);
       auto start = value(8);
       if (start < 24 || start >= extent)
-        throw ParseFault("macho", "invalid library name offset");
+        throw ParseFault("macho", "invalid library name offset",
+                         origin + header_bytes + position);
       slice.dependencies.emplace_back(
           opcode, command.text(start, extent - start, true));
     } else if (opcode == 0x8000001c) {
       command.require(0, 12);
       auto start = value(8);
       if (start < 12 || start >= extent)
-        throw ParseFault("macho", "invalid rpath offset");
+        throw ParseFault("macho", "invalid rpath offset",
+                         origin + header_bytes + position);
       slice.search_paths.push_back(command.text(start, extent - start, true));
     } else if (opcode == 0x1d) {
       command.require(0, 16);
       if (slice.signature_range)
-        throw ParseFault("macho", "duplicate signature load command");
+        throw ParseFault("macho", "duplicate signature load command",
+                         origin + header_bytes + position);
       auto start = value(8), length = value(12);
       input.require(start, length);
       slice.signature_range = {{start, length}};
